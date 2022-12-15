@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HashtagExtractor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Tweet</a> &gt; <a href="index.source.html" class="el_package">tweetoscope</a> &gt; <span class="el_source">HashtagExtractor.java</span></div><h1>HashtagExtractor.java</h1><pre class="source lang-java linenums">/*
+Copyright 2022 Virginie Galtier
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;
+ */
+package tweetoscope;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscription;
+
+import com.twitter.clientlib.model.Tweet;
+import com.twitter.twittertext.Extractor;
+
+/**
+ * Reacts to the reception of a new Tweet by parsing its text to look for
+ * hashtags. For each hashtag found, if any, notifies its subscribers. Tweets
+ * are received from the upstream component
+ * {@link distributed_tweetoscope.tweetsFilter.TweetFilter} via Java Flow.
+ * Hashtags are passed downstream to the
+ * {@link distributed_tweetoscope.HashtagCounter} via Java Flow.
+ * 
+ * @author Virginie Galtier
+ *
+ */
+public class HashtagExtractor implements Subscriber&lt;Tweet&gt;, Publisher&lt;String&gt; {
+	/**
+	 * List of objects to notify when a hashtag is extracted (downstream component =
+	 * HashtagCounter)
+	 */
+	protected List&lt;Subscriber&lt;? super String&gt;&gt; subscribers;
+
+	/**
+	 * Twitter lib utility object
+	 */
+<span class="nc" id="L49">	final Extractor twitterTextExtractor = new Extractor();</span>
+
+<span class="nc" id="L51">	public HashtagExtractor() {</span>
+<span class="nc" id="L52">		subscribers = new ArrayList&lt;Subscriber&lt;? super String&gt;&gt;();</span>
+<span class="nc" id="L53">	}</span>
+
+	@Override
+	public void subscribe(Subscriber&lt;? super String&gt; subscriber) {
+<span class="nc" id="L57">		subscribers.add(subscriber);</span>
+<span class="nc" id="L58">	}</span>
+
+	/**
+	 * Triggered when the upstream component (TweetFilter) passes a new Tweet via
+	 * Java Flow
+	 */
+	@Override
+	public void onNext(Tweet tweet) {
+<span class="nc bnc" id="L66" title="All 2 branches missed.">		if (tweet != null) {</span>
+			// extracts the hashtags in the Tweet
+<span class="nc" id="L68">			List&lt;String&gt; hashtags = twitterTextExtractor.extractHashtags(tweet.getText());</span>
+
+			// passes down the hashtags to the subscribers
+<span class="nc bnc" id="L71" title="All 2 branches missed.">			for (String hashtag : hashtags) {</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">				for (Subscriber&lt;? super String&gt; s : subscribers) {</span>
+<span class="nc" id="L73">					s.onNext(hashtag);</span>
+<span class="nc" id="L74">				}</span>
+<span class="nc" id="L75">			}</span>
+		}
+<span class="nc" id="L77">	}</span>
+
+	@Override
+	public void onSubscribe(Subscription subscription) {
+		// TODO Auto-generated method stub
+<span class="nc" id="L82">	}</span>
+
+	@Override
+	public void onError(Throwable throwable) {
+		// TODO Auto-generated method stub
+<span class="nc" id="L87">	}</span>
+
+	@Override
+	public void onComplete() {
+		// TODO Auto-generated method stub
+<span class="nc" id="L92">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

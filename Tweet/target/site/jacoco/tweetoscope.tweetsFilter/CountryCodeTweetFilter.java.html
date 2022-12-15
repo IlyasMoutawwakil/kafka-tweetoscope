@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CountryCodeTweetFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Tweet</a> &gt; <a href="index.source.html" class="el_package">tweetoscope.tweetsFilter</a> &gt; <span class="el_source">CountryCodeTweetFilter.java</span></div><h1>CountryCodeTweetFilter.java</h1><pre class="source lang-java linenums">/*
+Copyright 2022 Virginie Galtier
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;
+ */
+package tweetoscope.tweetsFilter;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
+import java.time.OffsetDateTime;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.HttpClients;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.twitter.clientlib.ApiException;
+import com.twitter.clientlib.model.Place;
+import com.twitter.clientlib.model.SingleTweetLookupResponse;
+import com.twitter.clientlib.model.Tweet;
+
+/**
+ * Filters Tweets according to their country code
+ * 
+ * @author Virginie Galtier
+ *
+ */
+public class CountryCodeTweetFilter extends OnlineTweetFilter {
+
+	/**
+	 * The targeted country code to match
+	 */
+	protected String countryCode;
+
+	/**
+	 * Creates a filter that queries the Twitter API to retrieve the country code
+	 * associated with the &quot;place&quot; tag of a Tweet (if it is set) and tests whether
+	 * its value equals a given code.
+	 * 
+	 * @param countryCode targeted country code to match (example: &quot;us&quot;)
+	 */
+<span class="nc" id="L67">	public CountryCodeTweetFilter(String countryCode) {</span>
+<span class="nc" id="L68">		this.countryCode = countryCode;</span>
+<span class="nc" id="L69">	}</span>
+
+	@Override
+	protected boolean match(Tweet tweet) {
+<span class="nc" id="L73">		String tweetCountryCode = getCountryCode2(tweet);</span>
+<span class="nc bnc" id="L74" title="All 4 branches missed.">		return (tweetCountryCode != null) &amp;&amp; (tweetCountryCode.equals(countryCode));</span>
+	}
+
+	/**
+	 * Returns the country code of the place tagged in a Tweet, if any. Version 1:
+	 * manually, provided as an example
+	 * 
+	 * @param tweet
+	 * @return the country code of the place tagged in a Tweet if the information is
+	 *         available, null otherwise
+	 */
+	protected String getCountryCode(Tweet tweet) {
+<span class="nc bnc" id="L86" title="All 2 branches missed.">		if (tweet.getGeo().getPlaceId() == null)</span>
+<span class="nc" id="L87">			return null;</span>
+		try {
+			// to get the country_code from the placeId set in the Tweet, a new request to
+			// the Twitter API is required
+			// see
+			// https://developer.twitter.com/en/docs/twitter-api/data-dictionary/object-model/place
+<span class="nc" id="L93">			HttpClient httpClient = HttpClients.custom()</span>
+<span class="nc" id="L94">					.setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())</span>
+<span class="nc" id="L95">					.build();</span>
+<span class="nc" id="L96">			URIBuilder uriBuilder = new URIBuilder(</span>
+<span class="nc" id="L97">					&quot;https://api.twitter.com/2/tweets?ids=&quot; + tweet.getId() + &quot;&amp;expansions=geo.place_id&quot;</span>
+							+ &quot;&amp;place.fields=contained_within,country,country_code,full_name,geo,id,name,place_type&quot;);
+<span class="nc" id="L99">			HttpGet httpGet = new HttpGet(uriBuilder.build());</span>
+<span class="nc" id="L100">			httpGet.setHeader(&quot;Authorization&quot;, String.format(&quot;Bearer %s&quot;, BEARER_TOKEN));</span>
+
+<span class="nc" id="L102">			HttpResponse response = httpClient.execute(httpGet);</span>
+<span class="nc" id="L103">			HttpEntity entity = response.getEntity();</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">			if (null != entity) {</span>
+<span class="nc" id="L105">				Gson gson = new GsonBuilder()</span>
+<span class="nc" id="L106">						.registerTypeAdapter(OffsetDateTime.class, (JsonDeserializer&lt;OffsetDateTime&gt;) (json, type,</span>
+<span class="nc" id="L107">								context) -&gt; OffsetDateTime.parse(json.getAsString()))</span>
+<span class="nc" id="L108">						.create();</span>
+<span class="nc" id="L109">				BufferedReader reader = new BufferedReader(new InputStreamReader((entity.getContent())));</span>
+<span class="nc" id="L110">				String line = reader.readLine();</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">				while (line != null) {</span>
+<span class="nc" id="L112">					JsonElement include = gson.fromJson(line, JsonObject.class).get(&quot;includes&quot;);</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">					if (include != null) {</span>
+<span class="nc" id="L114">						JsonElement jsonPlace = include.getAsJsonObject().get(&quot;places&quot;).getAsJsonArray().get(0);</span>
+<span class="nc" id="L115">						Place place = gson.fromJson(jsonPlace, Place.class);</span>
+<span class="nc" id="L116">						return place.getCountryCode();</span>
+					}
+<span class="nc" id="L118">					line = reader.readLine();</span>
+<span class="nc" id="L119">				}</span>
+			}
+<span class="nc" id="L121">		} catch (URISyntaxException | IOException e) {</span>
+<span class="nc" id="L122">			System.err.println(&quot;error while retreiving the country code: &quot; + e);</span>
+<span class="nc" id="L123">		}</span>
+<span class="nc" id="L124">		return null;</span>
+	}
+
+	/**
+	 * Returns the country code of the place tagged in a Tweet, if any. Version 2:
+	 * using the findTweetId function of the Twitter API
+	 * 
+	 * @param tweet
+	 * @return the country code of the place tagged in a Tweet if the information is
+	 *         available, null otherwise
+	 */
+	private String getCountryCode2(Tweet tweet) {
+<span class="nc bnc" id="L136" title="All 2 branches missed.">		if (tweet.getGeo().getPlaceId() != null) {</span>
+			try {
+<span class="nc" id="L138">				Set&lt;String&gt; expansions = new HashSet&lt;&gt;(Arrays.asList(&quot;geo.place_id&quot;));</span>
+<span class="nc" id="L139">				Set&lt;String&gt; tweetFields = new HashSet&lt;&gt;(</span>
+<span class="nc" id="L140">						Arrays.asList(&quot;created_at&quot;, &quot;text&quot;, &quot;author_id&quot;, &quot;conversation_id&quot;, &quot;geo&quot;, &quot;lang&quot;));</span>
+<span class="nc" id="L141">				Set&lt;String&gt; userFields = null;</span>
+<span class="nc" id="L142">				Set&lt;String&gt; mediaFields = null;</span>
+<span class="nc" id="L143">				Set&lt;String&gt; placeFields = new HashSet&lt;&gt;(Arrays.asList(&quot;country_code&quot;));</span>
+<span class="nc" id="L144">				Set&lt;String&gt; pollFields = null;</span>
+<span class="nc" id="L145">				SingleTweetLookupResponse response = twitterApiInstance.tweets().findTweetById(tweet.getId(),</span>
+						expansions, tweetFields, userFields, mediaFields, placeFields, pollFields);
+<span class="nc bnc" id="L147" title="All 4 branches missed.">				if (response.getIncludes() != null &amp;&amp; response.getIncludes().getPlaces() != null) {</span>
+<span class="nc" id="L148">					return response.getIncludes().getPlaces().get(0).getCountryCode();</span>
+				}
+<span class="nc" id="L150">			} catch (ApiException e) {</span>
+<span class="nc" id="L151">				System.err.println(&quot;error while retreiving the country code: &quot; + e.getResponseBody());</span>
+<span class="nc" id="L152">			}</span>
+		}
+<span class="nc" id="L154">		return null;</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

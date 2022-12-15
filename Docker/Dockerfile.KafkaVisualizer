@@ -1,0 +1,10 @@
+FROM jlesage/baseimage-gui:alpine-3.15
+
+ENV APP_NAME="KafkaVisualizer"
+
+RUN apk update 
+RUN apk add openjdk11
+
+# Copy the start script.
+COPY ./Tweet/target/KafkaVisualizor-jar-with-dependencies.jar /KafkaVisualizer-jar-with-dependencies.jar
+COPY ./Docker/start-visualizer.sh /startapp.sh

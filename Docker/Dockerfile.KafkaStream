@@ -1,0 +1,8 @@
+FROM alpine
+
+RUN apk update 
+RUN apk add openjdk11
+
+COPY ./Tweet/target/TwitterSampledStreamKafkaReader-jar-with-dependencies.jar KafkaTwitterSampledStream-jar-with-dependencies.jar
+
+CMD java -jar KafkaTwitterSampledStream-jar-with-dependencies.jar "kafka-service:9092" "Tweets"

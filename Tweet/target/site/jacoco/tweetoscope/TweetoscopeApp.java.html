@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TweetoscopeApp.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Tweet</a> &gt; <a href="index.source.html" class="el_package">tweetoscope</a> &gt; <span class="el_source">TweetoscopeApp.java</span></div><h1>TweetoscopeApp.java</h1><pre class="source lang-java linenums">/*
+Copyright 2022 Virginie Galtier
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;
+ */
+package tweetoscope;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+
+import tweetoscope.tweetsFilter.*;
+import tweetoscope.tweetsProducer.*;
+
+/**
+ * Observes Twitter hashtags trends.
+ * 
+ * @author Virginie Galtier
+ *
+ */
+public class TweetoscopeApp {
+
+	private static final String FILTER_COUNTRY = &quot;country&quot;;
+	private static final String FILTER_LANGUAGE = &quot;language&quot;;
+	private static final String FILTER_NONE = &quot;none&quot;;
+	private static final String FILTER_LENGTH = &quot;length&quot;;
+
+	private static final String RANDOM_SOURCE = &quot;random&quot;;
+	private static final String FILTERED_SOURCE = &quot;filtered&quot;;
+	protected static final String SCENARIO_SOURCE = &quot;scenario&quot;;
+	private static final String SAMPLED_SOURCE = &quot;sampled&quot;;
+
+	private static final String RECORDED_SOURCE = &quot;recorded&quot;; // New Source Task 7
+
+
+	// DEFAULT CONFIGURATION:
+	/**
+	 * source of the Tweets injected into the application
+	 */
+<span class="nc" id="L59">	protected String tweetsSource = RECORDED_SOURCE;</span>
+	/**
+	 * Tweets filtering strategy
+	 */
+<span class="nc" id="L63">	protected String filteringStrategy = FILTER_LENGTH;</span>
+	/**
+	 * Number of hashtags to display on the leader board
+	 */
+<span class="nc" id="L67">	protected int nbLeaders = 5;</span>
+
+	public static void main(String[] args) {
+<span class="nc" id="L70">		new TweetoscopeApp(args);</span>
+<span class="nc" id="L71">	}</span>
+
+<span class="nc" id="L73">	public TweetoscopeApp(String[] args) {</span>
+		// reads configuration from the command line
+<span class="nc" id="L75">		readProgArgs(args);</span>
+
+		// creates the components
+		// -----------------------
+		// source of the Tweets
+<span class="nc" id="L80">		TweetsProducer tweetsProducer = null;</span>
+<span class="nc bnc" id="L81" title="All 6 branches missed.">		switch (tweetsSource) {</span>
+		case SCENARIO_SOURCE:
+<span class="nc" id="L83">			tweetsProducer = new MockTwitterStreamScenario();</span>
+<span class="nc" id="L84">			break;</span>
+		case RANDOM_SOURCE:
+<span class="nc" id="L86">			tweetsProducer = new MockTwitterStreamRandom();</span>
+<span class="nc" id="L87">			break;</span>
+		case RECORDED_SOURCE:
+<span class="nc" id="L89">			tweetsProducer = new MockTwitterStreamRecorded();</span>
+<span class="nc" id="L90">			break;</span>
+		case FILTERED_SOURCE:
+			// up to 5 rules, up to 243 characters per rule
+			// Some words are not usable in query (&quot;you&quot; for instance) and trigger an error
+			// message
+			// &quot;Rules must contain at least one positive, non-stopword clause&quot;
+			// but I couldn't find a list of the stopwords online.
+<span class="nc" id="L97">			List&lt;String&gt; keywords = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L98">			keywords.add(&quot;Europe OR Africa OR Asia OR America OR Autralia OR Antartica &quot;</span>
+					+ &quot;OR Paris OR Berlin OR London OR Moscow OR Washington OR Beijing &quot;
+					+ &quot;OR France OR Germany OR United Kingdom OR Russia OR USA OR China OR Brazil OR Israel &quot;
+					+ &quot;OR Atlantic OR Pacific&quot; + &quot;OR place&quot;);
+
+<span class="nc" id="L103">			keywords.add(&quot;climate OR sustainable OR energy OR free OR open OR peace OR war OR sport &quot;</span>
+					+ &quot;OR health OR Internet OR technology OR music OR award OR movie OR star OR pride &quot;
+					+ &quot;OR food OR drink OR meal OR recipe OR routine OR economy OR business OR market OR science&quot;);
+
+<span class="nc" id="L107">			keywords.add(&quot;Machine Learning OR data OR cloud OR social OR network OR woke OR election &quot;</span>
+					+ &quot;OR topic OR olympic OR game OR running OR trail OR workout OR challenge OR brand &quot;
+					+ &quot;OR marketing OR advertisement OR news OR blockchain OR online OR store OR fashion&quot;);
+
+<span class="nc" id="L111">			keywords.add(&quot;Monday OR Tuesday OR Wednesday OR Thursday OR Friday OR Saturday OR Sunday &quot; + &quot;OR 2022 &quot;</span>
+					+ &quot;OR time &quot; + &quot;OR week OR month OR year &quot; + &quot;OR yesterday OR today OR tomorrow &quot;
+					+ &quot;OR last OR next OR soon &quot; + &quot;OR what OR who OR whom OR where OR when OR why&quot;);
+
+<span class="nc" id="L115">			keywords.add(&quot;Apple OR Google OR Microsoft OR Amazon OR Facebook OR Coca-Cola OR Disney OR Samsung &quot;</span>
+					+ &quot;OR Intel OR NIKE OR Cisco 0R Oracle &quot; + &quot;OR Visa OR IBM OR Ikea &quot; + &quot;OR Netflix OR BMW &quot;
+					+ &quot;OR Dion OR Thunberg &quot; + &quot;OR Messi OR Federer OR Djokovic &quot; + &quot;OR Rihanna OR Coldplay&quot;);
+
+<span class="nc" id="L119">			tweetsProducer = TwitterFilteredStreamReaderSingleton.getInstance(keywords);</span>
+<span class="nc" id="L120">			break;</span>
+		case SAMPLED_SOURCE:
+<span class="nc" id="L122">			tweetsProducer = TwitterSampledStreamReaderSingleton.getInstance();</span>
+			break;
+		}
+
+		// filters out Tweets based on the location, or language for instance
+<span class="nc" id="L127">		TweetFilter filter = null;</span>
+<span class="nc bnc" id="L128" title="All 5 branches missed.">		switch (filteringStrategy) {</span>
+		case FILTER_NONE:
+<span class="nc" id="L130">			filter = new EmptyTweetFilter();</span>
+<span class="nc" id="L131">			break;</span>
+		case FILTER_LANGUAGE:
+<span class="nc" id="L133">			filter = new LangTweetFilter(&quot;en&quot;);</span>
+<span class="nc" id="L134">			break;</span>
+		case FILTER_COUNTRY:
+<span class="nc" id="L136">			filter = new CountryCodeTweetFilter(&quot;us&quot;);</span>
+<span class="nc" id="L137">			break;</span>
+		case FILTER_LENGTH:
+<span class="nc" id="L139">			filter = new TextLengthFilter(300);</span>
+			break;
+		}
+
+		// extracts hashtags from Tweet text
+<span class="nc" id="L144">		HashtagExtractor extractor = new HashtagExtractor();</span>
+
+		// records the number of occurrences of each hashtag
+<span class="nc" id="L147">		HashtagCounter counter = new HashtagCounter(nbLeaders);</span>
+
+		// visualizes the most popular hashtags as an updating histogram
+<span class="nc" id="L150">		Visualizor visualizor = new Visualizor(nbLeaders);</span>
+
+		// defines the flow of information between the components
+		// -------------------------------------------------------
+<span class="nc" id="L154">		tweetsProducer.subscribe(filter);</span>
+<span class="nc" id="L155">		filter.subscribe(extractor);</span>
+<span class="nc" id="L156">		extractor.subscribe(counter);</span>
+<span class="nc" id="L157">		counter.subscribe(visualizor);</span>
+
+		// starts the Tweets sources
+		// --------------------------
+<span class="nc" id="L161">		Thread tweetsProducerThread = new Thread(tweetsProducer);</span>
+<span class="nc" id="L162">		tweetsProducerThread.start();</span>
+<span class="nc" id="L163">	}</span>
+
+	/**
+	 * reads the values for the Tweets source, filtering strategy and number of
+	 * Tweets on the leader board from the command line, and performs a few checks
+	 * 
+	 * @param args command line arguments
+	 */
+	protected void readProgArgs(String[] args) {
+<span class="nc" id="L172">		List&lt;String&gt; validTweetsSources = Arrays.asList(SCENARIO_SOURCE, RANDOM_SOURCE,</span>
+				FILTERED_SOURCE, SAMPLED_SOURCE);
+<span class="nc" id="L174">		List&lt;String&gt; validFilteringStrategies = Arrays.asList(FILTER_NONE, FILTER_LANGUAGE, FILTER_COUNTRY);</span>
+
+<span class="nc" id="L176">		Options options = new Options();</span>
+
+<span class="nc" id="L178">		Option tweetsSourceOption = new Option(&quot;s&quot;, &quot;source&quot;, true,</span>
+<span class="nc" id="L179">				&quot;Tweets source in &quot; + validTweetsSources.toString());</span>
+<span class="nc" id="L180">		tweetsSourceOption.setRequired(false);</span>
+<span class="nc" id="L181">		tweetsSourceOption.setArgs(1);</span>
+<span class="nc" id="L182">		tweetsSourceOption.setType(String.class);</span>
+<span class="nc" id="L183">		options.addOption(tweetsSourceOption);</span>
+
+<span class="nc" id="L185">		Option filteringStrategyOption = new Option(&quot;f&quot;, &quot;filtering&quot;, true,</span>
+<span class="nc" id="L186">				&quot;Filtering strategy in &quot; + validFilteringStrategies.toString());</span>
+<span class="nc" id="L187">		filteringStrategyOption.setRequired(false);</span>
+<span class="nc" id="L188">		filteringStrategyOption.setArgs(1);</span>
+<span class="nc" id="L189">		filteringStrategyOption.setType(String.class);</span>
+<span class="nc" id="L190">		options.addOption(filteringStrategyOption);</span>
+
+<span class="nc" id="L192">		Option nbTopOptions = new Option(&quot;n&quot;, &quot;nbTop&quot;, true, &quot;Number of Tweets on the top-board&quot;);</span>
+<span class="nc" id="L193">		nbTopOptions.setRequired(false);</span>
+<span class="nc" id="L194">		nbTopOptions.setArgs(1);</span>
+<span class="nc" id="L195">		nbTopOptions.setType(Integer.class);</span>
+<span class="nc" id="L196">		options.addOption(nbTopOptions);</span>
+
+<span class="nc" id="L198">		CommandLineParser parser = new DefaultParser();</span>
+<span class="nc" id="L199">		HelpFormatter help = new HelpFormatter();</span>
+<span class="nc" id="L200">		CommandLine cmd = null;</span>
+
+		try {
+<span class="nc" id="L203">			cmd = parser.parse(options, args);</span>
+<span class="nc" id="L204">		} catch (ParseException e) {</span>
+<span class="nc" id="L205">			System.out.println(e.getMessage());</span>
+<span class="nc" id="L206">			help.printHelp(&quot;Tweetoscope app command line&quot;, options);</span>
+<span class="nc" id="L207">			System.exit(1);</span>
+<span class="nc" id="L208">		}</span>
+
+<span class="nc bnc" id="L210" title="All 2 branches missed.">		if (cmd.hasOption(tweetsSourceOption)) {</span>
+<span class="nc" id="L211">			tweetsSource = cmd.getOptionValue(tweetsSourceOption);</span>
+<span class="nc bnc" id="L212" title="All 2 branches missed.">			if (!validTweetsSources.contains(tweetsSource)) {</span>
+<span class="nc" id="L213">				System.out.println(&quot;invalid Tweets source&quot;);</span>
+<span class="nc" id="L214">				help.printHelp(&quot;Tweetoscope app command line&quot;, options);</span>
+<span class="nc" id="L215">				System.exit(1);</span>
+			}
+		}
+
+<span class="nc bnc" id="L219" title="All 2 branches missed.">		if (cmd.hasOption(filteringStrategy)) {</span>
+<span class="nc" id="L220">			filteringStrategy = cmd.getOptionValue(filteringStrategyOption);</span>
+<span class="nc bnc" id="L221" title="All 2 branches missed.">			if (!validFilteringStrategies.contains(filteringStrategy)) {</span>
+<span class="nc" id="L222">				System.out.println(&quot;invalid filtering strategy&quot;);</span>
+<span class="nc" id="L223">				help.printHelp(&quot;Tweetoscope app command line&quot;, options);</span>
+<span class="nc" id="L224">				System.exit(1);</span>
+			}
+		}
+
+<span class="nc bnc" id="L228" title="All 2 branches missed.">		if (cmd.hasOption(nbTopOptions)) {</span>
+			try {
+<span class="nc" id="L230">				nbLeaders = Integer.parseInt(cmd.getOptionValue(nbTopOptions));</span>
+<span class="nc" id="L231">			} catch (NumberFormatException e) {</span>
+<span class="nc" id="L232">				System.out.println(&quot;invalid number of Tweets on the top-board&quot;);</span>
+<span class="nc" id="L233">				help.printHelp(&quot;Tweetoscope app command line&quot;, options);</span>
+<span class="nc" id="L234">				System.exit(1);</span>
+<span class="nc" id="L235">			}</span>
+		}
+<span class="nc" id="L237">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

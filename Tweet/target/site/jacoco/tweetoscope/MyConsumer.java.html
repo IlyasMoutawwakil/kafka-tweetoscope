@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MyConsumer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Tweet</a> &gt; <a href="index.source.html" class="el_package">tweetoscope</a> &gt; <span class="el_source">MyConsumer.java</span></div><h1>MyConsumer.java</h1><pre class="source lang-java linenums">package tweetoscope;
+
+import java.time.Duration;
+import java.util.Collections;
+import java.util.Properties;
+
+import com.twitter.clientlib.model.Tweet;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+
+public class MyConsumer {
+
+    public static void main(String[] args) {
+<span class="nc" id="L16">        new MyConsumer();</span>
+<span class="nc" id="L17">    }</span>
+
+<span class="nc" id="L19">    MyConsumer() {</span>
+        // records handled by this consumer will have no key, and a Product value
+        KafkaConsumer&lt;Void, Tweet&gt; kafkaConsumer;
+        // create the Kafka consumer with the appropriate configuration
+<span class="nc" id="L23">        kafkaConsumer = new KafkaConsumer&lt;Void, Tweet&gt;(configureKafkaConsumer());</span>
+        // subscribes to the 'test' topic
+<span class="nc" id="L25">        kafkaConsumer.subscribe(Collections.singletonList(&quot;tweetoscope&quot;));</span>
+        // reads from the topic
+        //try {
+<span class="nc" id="L28">            Duration timeout = Duration.ofMillis(1000);</span>
+<span class="nc" id="L29">            ConsumerRecords&lt;Void, Tweet&gt; records = null;</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">            for(int i=0;i&lt;20;i++) { // I'm a machine, I can work forever :-)</span>
+<span class="nc" id="L31">                records = kafkaConsumer.poll(timeout);</span>
+<span class="nc bnc" id="L32" title="All 2 branches missed.">                for (ConsumerRecord&lt;Void,Tweet&gt; record : records)</span>
+<span class="nc" id="L33">                    System.out.println(record.value().getLang());</span>
+            }
+        //} catch (Exception e) {
+        //     System.err.println(&quot;something went wrong... &quot; + e.getMessage());
+        //} finally {
+<span class="nc" id="L38">            kafkaConsumer.close();</span>
+        //}
+<span class="nc" id="L40">    }</span>
+
+    private Properties configureKafkaConsumer() {
+<span class="nc" id="L43">        Properties consumerProperties = new Properties();</span>
+<span class="nc" id="L44">        consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, &quot;localhost:9092&quot;);</span>
+<span class="nc" id="L45">        consumerProperties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,</span>
+                &quot;org.apache.kafka.common.serialization.VoidDeserializer&quot;);
+<span class="nc" id="L47">        consumerProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,</span>
+                //&quot;org.apache.kafka.common.serialization.StringDeserializer&quot;);
+                TweetDeserializer.class);
+<span class="nc" id="L50">        consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, &quot;earliest&quot;); // from beginning</span>
+<span class="nc" id="L51">        consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, &quot;myOwnPrivateJavaGroup&quot;);</span>
+<span class="nc" id="L52">        return consumerProperties;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

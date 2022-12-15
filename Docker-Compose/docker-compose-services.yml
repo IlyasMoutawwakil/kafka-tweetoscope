@@ -1,0 +1,23 @@
+version: '3.9'
+
+services:
+  kafka-stream:
+    build: 
+      context: ../
+      dockerfile: Docker/Dockerfile.KafkaStream
+    env_file:
+      - env.txt
+
+  kafka-filter:
+    build: 
+      context: ../
+      dockerfile: Docker/Dockerfile.KafkaFilter
+    env_file:
+      - env.txt
+
+  kafka-visualizer:
+    build: 
+      context: ../
+      dockerfile: Docker/Dockerfile.KafkaVisualizer
+    ports:
+      - "5800:5800"

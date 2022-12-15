@@ -1,0 +1,8 @@
+FROM ubuntu
+
+RUN apt-get update
+RUN apt-get install -y openjdk-11-jdk
+
+COPY ./Tweet/target/StreamFilterService-jar-with-dependencies.jar KafkaFilter-jar-with-dependencies.jar
+
+CMD java -jar KafkaFilter-jar-with-dependencies.jar "kafka-service:9092" "Tweets" "Filtered-Tweets"

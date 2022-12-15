@@ -1,0 +1,106 @@
+stages:
+  - unit_tests
+  - tests_reports
+  - build_jars
+  - build_docker_images
+  - compile_pdf
+  - publish_pages
+
+unit_tests_job:
+  stage: unit_tests 
+  tags:
+    - docker
+  image: maven:latest
+  script:
+    - mvn -f Tweet/pom.xml clean test
+  rules:
+    - changes:
+      - Tweet/pom.xml
+      - Tweet/src/*
+      - Tweet/testBases/*
+      when: always
+
+tests_reports_job:
+  stage: tests_reports
+  tags:
+    - docker
+  image: maven:latest
+  script:
+    - mvn -f Tweet/pom.xml verify jacoco:report
+  artifacts:
+    reports:
+      junit:
+        - Tweet/target/surefire-reports/TEST-*.xml
+    paths:
+      - Tweet/target/site/jacoco
+  rules:
+    - changes:
+      - Tweet/pom.xml
+      - Tweet/src/*
+      - Tweet/testBases/*
+      when: always
+
+build_jar_job:
+  stage: build_jars
+  tags:
+    - docker
+  image: maven:latest
+  script:
+    - mvn -f Tweet/pom.xml clean package
+  artifacts:
+    paths:
+      - Tweet/target/KafkaVisualizor-jar-with-dependencies.jar
+      - Tweet/target/StreamFilterService-jar-with-dependencies.jar
+      - Tweet/target/TwitterSampledStreamKafkaReader-jar-with-dependencies.jar
+    expire_in: 12 mos
+  rules:
+    - changes:
+      - Tweet/src/*
+      - Tweet/target/*
+      when: always
+
+build_docker_images_job:
+  stage: build_docker_images
+  tags:
+    - docker
+  image: 
+    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    entrypoint: [""]
+  script:
+  - /kaniko/executor --context "${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Docker/Dockerfile.KafkaStream" --destination "${CI_REGISTRY}/2019wangh/tweetoscope22_group-8_haowang_younesslaklouch_ilyasmoutawwakil/stream:latest" --cleanup
+  - /kaniko/executor --context "${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Docker/Dockerfile.KafkaFilter" --destination "${CI_REGISTRY}/2019wangh/tweetoscope22_group-8_haowang_younesslaklouch_ilyasmoutawwakil/filter:latest" --cleanup
+  - /kaniko/executor --context "${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Docker/Dockerfile.KafkaVisualizer" --destination "${CI_REGISTRY}/2019wangh/tweetoscope22_group-8_haowang_younesslaklouch_ilyasmoutawwakil/visualizer:latest" --cleanup
+  rules:
+    - changes:
+      - Tweet/target/*.jar
+      when: always
+
+compile_pdf_job:
+  stage: compile_pdf
+  tags:
+    - docker
+  image: tianon/latex:latest
+  script:
+    - cd Report
+    - latexmk -pdf report.tex
+  artifacts:
+    paths:
+      - Report/report.pdf
+  rules:
+    - changes:
+      - Report/*
+      when: always
+
+pages:
+  stage: publish_pages
+  tags:
+    - docker
+  script:
+    - mkdir -p public/Report
+    - mv Report/report.pdf public/Report/
+    - mkdir -p public/testCoverageReport
+    - mv Tweet/target/site/jacoco/* public/testCoverageReport/
+  artifacts:
+    paths:
+      - public/testCoverageReport
+      - public/Report/report.pdf

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TweetFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Tweet</a> &gt; <a href="index.source.html" class="el_package">tweetoscope.tweetsFilter</a> &gt; <span class="el_source">TweetFilter.java</span></div><h1>TweetFilter.java</h1><pre class="source lang-java linenums">/*
+Copyright 2022 Virginie Galtier
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;
+ */
+package tweetoscope.tweetsFilter;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscription;
+
+import com.twitter.clientlib.model.Tweet;
+
+/**
+ * Reacts to the reception of a new Tweet, if the Tweet matches the filter
+ * condition, downstream subscribers are notified, otherwise the process is
+ * silent. Tweets are received from
+ * {@link distributed_tweetoscope.tweetsProducer.TweetsProducer} via Java Flow.
+ * Filtered Tweets are passes down to the
+ * {@link distributed_tweetoscope.HashtagCounter} via Java Flow.
+ * 
+ * @author Virginie Galtier
+ *
+ */
+public abstract class TweetFilter implements Subscriber&lt;Tweet&gt;, Publisher&lt;Tweet&gt; {
+	/**
+	 * List of objects to notify when a new Tweet passes the filter (downstream
+	 * component = HashtagExtractor)
+	 */
+	protected List&lt;Subscriber&lt;? super Tweet&gt;&gt; subscribers;
+	/**
+	 * Creates a new Tweet filter
+	 **/
+<span class="fc" id="L47">	public TweetFilter() {</span>
+<span class="fc" id="L48">		subscribers = new ArrayList&lt;Subscriber&lt;? super Tweet&gt;&gt;();</span>
+<span class="fc" id="L49">	}</span>
+	/**
+	 * Tests the filter conditions
+	 * 
+	 * @param tweet Tweet to examine
+	 * @return true if the Tweet complies with the filter, false if it doesn't match
+	 *         the filter conditions
+	 */
+	protected abstract boolean match(Tweet tweet);
+	@Override
+	public void subscribe(Subscriber&lt;? super Tweet&gt; subscriber) {
+<span class="nc" id="L60">		subscribers.add(subscriber);</span>
+<span class="nc" id="L61">	}</span>
+
+	@Override
+	public void onNext(Tweet tweet) {
+<span class="nc bnc" id="L65" title="All 2 branches missed.">		if (match(tweet)) {</span>
+			// Notify the subscribers of the non-filtered out Tweet
+<span class="nc bnc" id="L67" title="All 2 branches missed.">			for (Subscriber&lt;? super Tweet&gt; s : subscribers) {</span>
+<span class="nc" id="L68">				s.onNext(tweet);</span>
+<span class="nc" id="L69">			}</span>
+		}
+<span class="nc" id="L71">	}</span>
+
+
+	@Override
+	public void onSubscribe(Subscription subscription) {
+		// TODO Auto-generated method stub
+<span class="nc" id="L77">	}</span>
+
+	@Override
+	public void onError(Throwable throwable) {
+		// TODO Auto-generated method stub
+<span class="nc" id="L82">	}</span>
+
+	@Override
+	public void onComplete() {
+		// TODO Auto-generated method stub
+<span class="nc" id="L87">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

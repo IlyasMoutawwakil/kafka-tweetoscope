@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MockTwitterStreamRecorded.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Tweet</a> &gt; <a href="index.source.html" class="el_package">tweetoscope.tweetsProducer</a> &gt; <span class="el_source">MockTwitterStreamRecorded.java</span></div><h1>MockTwitterStreamRecorded.java</h1><pre class="source lang-java linenums">package tweetoscope.tweetsProducer;
+import com.twitter.clientlib.model.Tweet;
+
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+
+import java.io.File;
+import java.io.IOException;
+import org.apache.commons.io.FileUtils;
+
+import java.util.Map;
+import java.util.HashMap;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonArray;
+
+import java.util.concurrent.Flow;
+import java.util.concurrent.Flow.Subscriber;
+
+public class MockTwitterStreamRecorded extends OfflineTweetsProducer{
+
+    public MockTwitterStreamRecorded() {
+<span class="nc" id="L23">        super();</span>
+<span class="nc" id="L24">    }</span>
+
+<span class="nc" id="L26">    private static String largeFileName = &quot;TestBases/largeTestBase.txt&quot;;</span>
+<span class="nc" id="L27">    private static String miniFileName = &quot;TestBases/miniTestBase.txt&quot;;</span>
+<span class="nc" id="L28">    private static String scenarioFileName = &quot;TestBases/scenarioTestBase.txt&quot;;</span>
+
+    private static String fileReader(){
+<span class="nc" id="L31">        File file=new File(miniFileName);</span>
+<span class="nc" id="L32">        String content= null;</span>
+        try {
+<span class="nc" id="L34">            content = FileUtils.readFileToString(file,&quot;UTF-8&quot;);</span>
+<span class="nc" id="L35">        } catch (IOException e) {</span>
+<span class="nc" id="L36">            throw new RuntimeException(e);</span>
+<span class="nc" id="L37">        }</span>
+<span class="nc" id="L38">        return content ;</span>
+    }
+    private Map&lt;String,String&gt; jsonParse(JsonObject nonParsedJson){
+<span class="nc" id="L41">        Map&lt;String,String&gt; parsedJson = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L43">        String id = nonParsedJson.getAsJsonPrimitive(&quot;id&quot;).getAsString();</span>
+<span class="nc" id="L44">        String created_at = nonParsedJson.getAsJsonPrimitive(&quot;created_at&quot;).getAsString();</span>
+<span class="nc" id="L45">        String text = nonParsedJson.getAsJsonPrimitive(&quot;text&quot;).getAsString();</span>
+<span class="nc" id="L46">        String author_id = nonParsedJson.getAsJsonPrimitive(&quot;author_id&quot;).getAsString();</span>
+<span class="nc" id="L47">        String conversation_id = nonParsedJson.getAsJsonPrimitive(&quot;conversation_id&quot;).getAsString();</span>
+        //String geo = nonParsedJson.getAsJsonPrimitive(&quot;geo&quot;).getAsString();
+<span class="nc" id="L49">        String lang = nonParsedJson.getAsJsonPrimitive(&quot;lang&quot;).getAsString();</span>
+
+<span class="nc" id="L51">        parsedJson.put(&quot;id&quot;,id);</span>
+<span class="nc" id="L52">        parsedJson.put(&quot;created_at&quot;,created_at);</span>
+<span class="nc" id="L53">        parsedJson.put(&quot;text&quot;,text);</span>
+<span class="nc" id="L54">        parsedJson.put(&quot;author_id&quot;,author_id);</span>
+<span class="nc" id="L55">        parsedJson.put(&quot;conversation_id&quot;,conversation_id);</span>
+        //parsedJson.put(&quot;geo&quot;,geo);
+<span class="nc" id="L57">        parsedJson.put(&quot;lang&quot;,lang);</span>
+
+<span class="nc" id="L59">        return parsedJson;</span>
+    }
+
+    @Override
+    public void run() {
+<span class="nc" id="L64">        String content = fileReader();</span>
+<span class="nc" id="L65">        Gson gson = new Gson();</span>
+<span class="nc" id="L66">        JsonObject jsonObject = gson.fromJson(content, JsonObject.class);</span>
+<span class="nc" id="L67">        JsonArray jsonObjectTweets = jsonObject.getAsJsonArray(&quot;tweets&quot;);</span>
+
+<span class="nc" id="L69">        Tweet[] tweets = new Tweet[jsonObjectTweets.size()];</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        for (int i = 0; i &lt;jsonObjectTweets.size(); i++) {</span>
+<span class="nc" id="L71">            tweets[i] = new Tweet();</span>
+<span class="nc" id="L72">            JsonObject currentJson = (JsonObject) jsonObjectTweets.get(i);</span>
+<span class="nc" id="L73">            Map&lt;String,String &gt; parsedJson = jsonParse(currentJson);</span>
+
+<span class="nc" id="L75">            tweets[i].setId(parsedJson.get(&quot;id&quot;));</span>
+<span class="nc" id="L76">            tweets[i].setCreatedAt(OffsetDateTime.parse(parsedJson.get(&quot;created_at&quot;)));</span>
+<span class="nc" id="L77">            tweets[i].setText(parsedJson.get(&quot;text&quot;));</span>
+<span class="nc" id="L78">            tweets[i].setAuthorId(parsedJson.get(&quot;author_id&quot;));</span>
+<span class="nc" id="L79">            tweets[i].setConversationId(parsedJson.get(&quot;conversation_id&quot;));</span>
+<span class="nc" id="L80">            tweets[i].getGeo();</span>
+<span class="nc" id="L81">            tweets[i].setLang(parsedJson.get(&quot;lang&quot;));</span>
+        }
+
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        for (int i = 0; i &lt; tweets.length; i++) {</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">            for ( Flow.Subscriber&lt;? super Tweet&gt; s : subscribers ) {</span>
+<span class="nc" id="L86">                  s.onNext(tweets[i]);//subscribe each tweet.</span>
+<span class="nc" id="L87">            }</span>
+        }
+<span class="nc" id="L89">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

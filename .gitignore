@@ -1,0 +1,12 @@
+*.idea/
+*.DS_Store
+*.iml
+.vscode
+Report/*
+!*report.tex
+!*report.pdf
+!*.png
+env.txt
+*.log
+*.aux
+*.log

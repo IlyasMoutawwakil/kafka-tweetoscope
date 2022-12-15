@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HashtagCounter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Tweet</a> &gt; <a href="index.source.html" class="el_package">tweetoscope</a> &gt; <span class="el_source">HashtagCounter.java</span></div><h1>HashtagCounter.java</h1><pre class="source lang-java linenums">/*
+Copyright 2022 Virginie Galtier
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;
+ */
+package tweetoscope;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscription;
+import java.util.stream.Collectors;
+
+/**
+ * 
+ * Reacts to the reception of a new hashtag by updating how many times it has
+ * been seen so far, and sending to its subscribers the updated list of the most
+ * popular ones.
+ * &lt;p&gt;
+ * Hashtags are received via Java Flow from the upstream component
+ * {@link distributed_tweetoscope.HashtagExtractor}. Downstream component
+ * ({@link distributed_tweetoscope.Visualiazor}) is notified of the new leader
+ * board data via Java Flow.
+ * 
+ * @author Virginie Galtier
+ *
+ */
+public class HashtagCounter implements Subscriber&lt;String&gt;, Publisher&lt;Map&lt;String, Integer&gt;&gt; {
+	/**
+	 * List of objects to notify when the map is updated (downstream component =
+	 * Visualizor)
+	 */
+	protected List&lt;Subscriber&lt;? super Map&lt;String, Integer&gt;&gt;&gt; subscribers;
+
+	/**
+	 * Number of lines to include on the leader board
+	 */
+	protected int nbLeaders;
+
+	/**
+	 * Map &lt;Hashtag text - number of occurrences&gt;
+	 */
+	protected Map&lt;String, Integer&gt; hashtagOccurrenceMap;
+
+	/**
+	 * List of most popular hashtags, used to checked if the list is changed after a
+	 * new hashtag is received
+	 */
+	protected Map&lt;String, Integer&gt; previousLeaderMap;
+
+	/**
+	 * 
+	 * @param nbLeaders number of hashtags to include on the leader board
+	 */
+<span class="nc" id="L70">	public HashtagCounter(int nbLeader) {</span>
+<span class="nc" id="L71">		this.nbLeaders = nbLeader;</span>
+<span class="nc" id="L72">		hashtagOccurrenceMap = new HashMap&lt;String, Integer&gt;();</span>
+
+<span class="nc" id="L74">		subscribers = new ArrayList&lt;Subscriber&lt;? super Map&lt;String, Integer&gt;&gt;&gt;();</span>
+<span class="nc" id="L75">	}</span>
+
+	@Override
+	public void subscribe(Subscriber&lt;? super Map&lt;String, Integer&gt;&gt; subscriber) {
+<span class="nc" id="L79">		subscribers.add(subscriber);</span>
+<span class="nc" id="L80">	}</span>
+
+	/**
+	 * Triggered by the reception of a new hashtag from a TweetFilter via Java Flow.
+	 */
+	@Override
+	public void onNext(String hashtag) {
+<span class="nc" id="L87">		synchronized (hashtagOccurrenceMap) {</span>
+			// avoid ConcurrentModificationException when multiple sources are used
+			// simultaneously
+
+			// inserts the new tag or increments the number of occurrences if it's not a new
+			// tag
+<span class="nc" id="L93">			String key = &quot;#&quot; + hashtag;</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">			if (hashtagOccurrenceMap.containsKey(key)) {</span>
+<span class="nc" id="L95">				hashtagOccurrenceMap.replace(key, 1 + hashtagOccurrenceMap.get(key));</span>
+			} else {
+<span class="nc" id="L97">				hashtagOccurrenceMap.put(key, 1);</span>
+			}
+
+			// sorts by number of occurrences and keeps only the top ones
+<span class="nc" id="L101">			Map&lt;String, Integer&gt; topHashtagsMap = hashtagOccurrenceMap.entrySet().stream()</span>
+<span class="nc" id="L102">					.sorted(Collections.reverseOrder(Map.Entry.comparingByValue())).limit(nbLeaders)</span>
+<span class="nc" id="L103">					.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));</span>
+
+			// notifies the subscribers
+<span class="nc bnc" id="L106" title="All 4 branches missed.">			if (previousLeaderMap == null || !previousLeaderMap.equals(topHashtagsMap)) {</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">				for (Subscriber&lt;? super Map&lt;String, Integer&gt;&gt; s : subscribers) {</span>
+<span class="nc" id="L108">					s.onNext(topHashtagsMap);</span>
+<span class="nc" id="L109">				}</span>
+<span class="nc" id="L110">				previousLeaderMap = topHashtagsMap;</span>
+			}
+			// else the top list is not changed, no need to re-publish it
+<span class="nc" id="L113">		}</span>
+<span class="nc" id="L114">	}</span>
+
+	@Override
+	public void onSubscribe(Subscription subscription) {
+		// TODO Auto-generated method stub
+<span class="nc" id="L119">	}</span>
+
+	@Override
+	public void onError(Throwable throwable) {
+		// TODO Auto-generated method stub
+<span class="nc" id="L124">	}</span>
+
+	@Override
+	public void onComplete() {
+		// TODO Auto-generated method stub
+<span class="nc" id="L129">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

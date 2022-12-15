@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StreamFilterService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Tweet</a> &gt; <a href="index.source.html" class="el_package">tweetoscope.kafkaFilter</a> &gt; <span class="el_source">StreamFilterService.java</span></div><h1>StreamFilterService.java</h1><pre class="source lang-java linenums">package tweetoscope.kafkaFilter;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
+import java.time.OffsetDateTime;
+import java.util.*;
+
+import com.google.gson.*;
+import com.twitter.clientlib.TwitterCredentialsBearer;
+import com.twitter.clientlib.api.TwitterApi;
+import com.twitter.clientlib.model.Place;
+import com.twitter.clientlib.model.Tweet;
+import com.twitter.twittertext.Extractor;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.serialization.Serializer;
+import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.Topology;
+import org.apache.kafka.streams.kstream.*;
+import tweetoscope.TweetDeserializer;
+import tweetoscope.TweetSerializer;
+
+public class StreamFilterService {
+    private String UpStream;
+    private String DownStream;
+    private KafkaStreams tweetStream;
+    private String bootstrapServers;
+
+    protected static String BEARER_TOKEN;
+
+    public static TwitterApi twitterApiInstance;
+
+<span class="nc" id="L47">    final Serializer&lt;Tweet&gt; tweetSerializer = new TweetSerializer();</span>
+<span class="nc" id="L48">    final Deserializer&lt;Tweet&gt; tweetDeserializer = new TweetDeserializer();</span>
+<span class="nc" id="L49">    final Serde&lt;Tweet&gt; tweetSerde = Serdes.serdeFrom(tweetSerializer, tweetDeserializer);</span>
+
+<span class="nc" id="L51">    final Extractor twitterTextExtractor = new Extractor();</span>
+
+    public static void main(String[] args) {
+<span class="nc" id="L54">        new StreamFilterService(args[0], args[1], args[2]);</span>
+<span class="nc" id="L55">    }</span>
+
+<span class="nc" id="L57">    StreamFilterService(String bootstrapServers, String UpStream, String DownStream) {</span>
+        try {
+<span class="nc" id="L59">            configureCredentials();</span>
+<span class="nc" id="L60">        } catch (Exception e) {</span>
+<span class="nc" id="L61">            System.err.println(&quot;Error while authentifacting: &quot; + e);</span>
+<span class="nc" id="L62">        }</span>
+
+<span class="nc" id="L64">        this.bootstrapServers = bootstrapServers;</span>
+<span class="nc" id="L65">        this.UpStream = UpStream; // from topic</span>
+<span class="nc" id="L66">        this.DownStream = DownStream; // to topic</span>
+        
+
+<span class="nc" id="L69">        Topology FilterForTweet = createFilterForTweet();</span>
+<span class="nc" id="L70">        tweetStream = new KafkaStreams(FilterForTweet, configureTweetKafkaStreams());</span>
+<span class="nc" id="L71">        tweetStream.start();</span>
+<span class="nc" id="L72">    }</span>
+
+    private Properties configureTweetKafkaStreams() {
+<span class="nc" id="L75">        Properties properties = new Properties();</span>
+<span class="nc" id="L76">        properties.put(StreamsConfig.APPLICATION_ID_CONFIG, &quot;TweetsFilterService&quot;);</span>
+<span class="nc" id="L77">        properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);</span>
+<span class="nc" id="L78">        properties.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);</span>
+<span class="nc" id="L79">        properties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());</span>
+<span class="nc" id="L80">        properties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());</span>
+<span class="nc" id="L81">        properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, &quot;earliest&quot;);</span>
+<span class="nc" id="L82">        return properties;</span>
+    }
+
+    private String configureCredentials() {
+<span class="nc" id="L86">        twitterApiInstance = new TwitterApi();</span>
+<span class="nc" id="L87">        BEARER_TOKEN = System.getenv(&quot;BEARER_TOKEN&quot;);</span>
+<span class="nc" id="L88">        TwitterCredentialsBearer credentials = new TwitterCredentialsBearer(BEARER_TOKEN);</span>
+<span class="nc" id="L89">        twitterApiInstance.setTwitterCredentials(credentials);</span>
+
+<span class="nc" id="L91">        return null;</span>
+    }
+
+    protected String getCountryCode(Tweet tweet) {
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        if (tweet.getGeo() == null)</span>
+<span class="nc" id="L96">            return null;</span>
+
+        try {
+            // to get the country_code from the placeId set in the Tweet, a new request to
+            // the Twitter API is required
+            // see
+            // https://developer.twitter.com/en/docs/twitter-api/data-dictionary/object-model/place
+<span class="nc" id="L103">            HttpClient httpClient = HttpClients.custom()</span>
+<span class="nc" id="L104">                    .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())</span>
+<span class="nc" id="L105">                    .build();</span>
+<span class="nc" id="L106">            URIBuilder uriBuilder = new URIBuilder(</span>
+<span class="nc" id="L107">                    &quot;https://api.twitter.com/2/tweets?ids=&quot; + tweet.getId() + &quot;&amp;expansions=geo.place_id&quot;</span>
+                            + &quot;&amp;place.fields=contained_within,country,country_code,full_name,geo,id,name,place_type&quot;);
+<span class="nc" id="L109">            HttpGet httpGet = new HttpGet(uriBuilder.build());</span>
+<span class="nc" id="L110">            httpGet.setHeader(&quot;Authorization&quot;, String.format(&quot;Bearer %s&quot;, BEARER_TOKEN));</span>
+<span class="nc" id="L111">            HttpResponse response = httpClient.execute(httpGet);</span>
+<span class="nc" id="L112">            HttpEntity entity = response.getEntity();</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">            if (null != entity) {</span>
+<span class="nc" id="L114">                Gson gson = new GsonBuilder()</span>
+<span class="nc" id="L115">                        .registerTypeAdapter(OffsetDateTime.class, (JsonDeserializer&lt;OffsetDateTime&gt;) (json, type,</span>
+<span class="nc" id="L116">                                context) -&gt; OffsetDateTime.parse(json.getAsString()))</span>
+<span class="nc" id="L117">                        .create();</span>
+<span class="nc" id="L118">                BufferedReader reader = new BufferedReader(new InputStreamReader((entity.getContent())));</span>
+<span class="nc" id="L119">                String line = reader.readLine();</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">                while (line != null) {</span>
+<span class="nc" id="L121">                    JsonElement include = gson.fromJson(line, JsonObject.class).get(&quot;includes&quot;);</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">                    if (include != null) {</span>
+<span class="nc" id="L123">                        JsonElement jsonPlace = include.getAsJsonObject().get(&quot;places&quot;).getAsJsonArray().get(0);</span>
+<span class="nc" id="L124">                        Place place = gson.fromJson(jsonPlace, Place.class);</span>
+<span class="nc" id="L125">                        return place.getCountryCode();</span>
+                    }
+<span class="nc" id="L127">                    line = reader.readLine();</span>
+<span class="nc" id="L128">                }</span>
+            }
+<span class="nc" id="L130">        } catch (URISyntaxException | IOException e) {</span>
+<span class="nc" id="L131">            System.err.println(&quot;error while retreiving the country code: &quot; + e);</span>
+<span class="nc" id="L132">        }</span>
+<span class="nc" id="L133">        return null;</span>
+    }
+
+    private Topology createFilterForTweet() {
+<span class="nc" id="L137">        StreamsBuilder streamBuilder = new StreamsBuilder();</span>
+<span class="nc" id="L138">        KStream&lt;Void, Tweet&gt; source = streamBuilder.stream(UpStream, Consumed.with(Serdes.Void(), tweetSerde));</span>
+        // ------------- First Filter Service; CountryCode filter -----------
+<span class="nc" id="L140">        Predicate&lt;Void, Tweet&gt; CountryFilter = new Predicate&lt;Void, Tweet&gt;() {</span>
+            @Override
+            public boolean test(Void unused, Tweet tweet) {
+                // String countryCode = getCountryCode(tweet);
+                // Most of the countrycodes are null, so here comment this filter.
+                // return (countryCode != null) &amp;&amp; (countryCode.equals(&quot;US&quot;));
+<span class="nc" id="L146">                return true;</span>
+            }
+        };
+<span class="nc" id="L149">        KStream&lt;Void, Tweet&gt; CountrySource = source.filter(CountryFilter);</span>
+        // ----------- First Filter Service; Language filter ----------------
+<span class="nc" id="L151">        Predicate&lt;Void, Tweet&gt; languageFilter = new Predicate&lt;Void, Tweet&gt;() {</span>
+            @Override
+            public boolean test(Void unused, Tweet tweet) {
+<span class="nc" id="L154">                String language = tweet.getLang();</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">                if (language == null)</span>
+<span class="nc" id="L156">                    return false;</span>
+<span class="nc" id="L157">                return language.equals(&quot;en&quot;);</span>
+            }
+        };
+<span class="nc" id="L160">        KStream&lt;Void, Tweet&gt; LanguageSource = CountrySource.filter(languageFilter);</span>
+        // ------------------ HashTagExtractor -----------------------
+<span class="nc" id="L162">        ValueMapper&lt;Tweet, List&lt;String&gt;&gt; hashTagValueMapper = new ValueMapper&lt;Tweet, List&lt;String&gt;&gt;() {</span>
+            public List&lt;String&gt; apply(Tweet tweet) {
+<span class="nc" id="L164">                List&lt;String&gt; hashtags = twitterTextExtractor.extractHashtags(tweet.getText());</span>
+<span class="nc" id="L165">                return hashtags;</span>
+            }
+        };
+<span class="nc" id="L168">        KStream&lt;Void, String&gt; HashTagExtractorSource = LanguageSource.flatMapValues(hashTagValueMapper);</span>
+        // ----------------- HashTagCounter ----------------------------
+<span class="nc" id="L170">        KeyValueMapper&lt;Void, String, String&gt; selector = new KeyValueMapper&lt;Void, String, String&gt;() {</span>
+            public String apply(Void key, String value) {
+<span class="nc" id="L172">                return value;</span>
+            }
+        };
+<span class="nc" id="L175">        KGroupedStream&lt;String, String&gt; HashTagGroupedStream = HashTagExtractorSource.groupBy(selector);</span>
+<span class="nc" id="L176">        KTable&lt;String, Long&gt; HashTagCountTable = HashTagGroupedStream.count();</span>
+        // ---------------------------------------------------------------
+<span class="nc" id="L178">        HashTagCountTable.toStream().to(DownStream, Produced.with(Serdes.String(), Serdes.Long()));</span>
+<span class="nc" id="L179">        HashTagCountTable.toStream().foreach((k, v) -&gt; {</span>
+<span class="nc" id="L180">            System.out.println(&quot;key : &quot; + k + &quot;\t\t&quot; + &quot;value : &quot; + v);</span>
+<span class="nc" id="L181">        });</span>
+<span class="nc" id="L182">        return streamBuilder.build();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

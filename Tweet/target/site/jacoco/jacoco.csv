@@ -1,0 +1,37 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+Tweet,tweetoscope.tweetsFilter,EmptyTweetFilter,5,0,0,0,2,0,2,0,2,0
+Tweet,tweetoscope.tweetsFilter,CountryCodeTweetFilter,253,0,18,0,50,0,14,0,5,0
+Tweet,tweetoscope.tweetsFilter,TweetFilter,29,8,4,0,10,3,7,1,5,1
+Tweet,tweetoscope.tweetsFilter,OnlineTweetFilter,25,0,2,0,9,0,2,0,1,0
+Tweet,tweetoscope.tweetsFilter,TextLengthFilter,12,6,2,0,2,3,2,1,1,1
+Tweet,tweetoscope.tweetsFilter,LangTweetFilter,12,0,0,0,4,0,2,0,2,0
+Tweet,tweetoscope.tweetsProducer,MockTwitterStreamRecorded,219,0,6,0,47,0,8,0,5,0
+Tweet,tweetoscope.tweetsProducer,TwitterSampledStreamReaderSingleton,178,0,16,0,48,0,13,0,5,0
+Tweet,tweetoscope.tweetsProducer,MockTwitterStreamScenario,522,0,4,0,88,0,4,0,2,0
+Tweet,tweetoscope.tweetsProducer,MockTwitterStreamRandom,199,0,8,0,24,0,6,0,2,0
+Tweet,tweetoscope.tweetsProducer,TweetsProducer,14,0,0,0,5,0,2,0,2,0
+Tweet,tweetoscope.tweetsProducer,TwitterFilteredStreamReaderSingleton,650,0,48,0,140,0,35,0,11,0
+Tweet,tweetoscope.tweetsProducer,OnlineTweetsProducer,13,0,2,0,6,0,2,0,1,0
+Tweet,tweetoscope.tweetsProducer,OfflineTweetsProducer,3,0,0,0,1,0,1,0,1,0
+Tweet,tweetoscope.kafkaProducer,MockTwitterStreamRecordedKafkaProducer,271,0,2,0,60,0,7,0,6,0
+Tweet,tweetoscope.kafkaProducer,TwitterSampledStreamKafkaReader,216,0,14,0,55,0,13,0,6,0
+Tweet,tweetoscope.kafkaProducer,KafkaOnlineProducer,13,0,2,0,6,0,2,0,1,0
+Tweet,tweetoscope.kafkaFilter,StreamFilterService.new KeyValueMapper() {...},8,0,0,0,2,0,2,0,2,0
+Tweet,tweetoscope.kafkaFilter,StreamFilterService.new ValueMapper() {...},15,0,0,0,3,0,2,0,2,0
+Tweet,tweetoscope.kafkaFilter,StreamFilterService.new Predicate() {...},17,0,2,0,5,0,3,0,2,0
+Tweet,tweetoscope.kafkaFilter,StreamFilterService.new Predicate() {...},8,0,0,0,2,0,2,0,2,0
+Tweet,tweetoscope.kafkaFilter,StreamFilterService,344,0,8,0,77,0,12,0,8,0
+Tweet,tweetoscope,KafkaVisualizor,225,0,2,0,46,0,4,0,3,0
+Tweet,tweetoscope,KafkaVisualizor.new Runnable() {...},59,0,2,0,10,0,4,0,3,0
+Tweet,tweetoscope,TweetoscopeApp,360,0,21,0,92,0,17,0,3,0
+Tweet,tweetoscope,Visualizor,77,0,0,0,21,0,5,0,5,0
+Tweet,tweetoscope,DateTimeSerializer,14,0,0,0,3,0,3,0,3,0
+Tweet,tweetoscope,Visualizor.new Runnable() {...},58,0,2,0,10,0,4,0,3,0
+Tweet,tweetoscope,DateTimeDeserializer,11,0,0,0,3,0,2,0,2,0
+Tweet,tweetoscope,TweetDeserializer,40,0,2,0,9,0,3,0,2,0
+Tweet,tweetoscope,MyConsumer,84,0,4,0,20,0,5,0,3,0
+Tweet,tweetoscope,TweetSerializer,36,0,2,0,9,0,3,0,2,0
+Tweet,tweetoscope,OffsetDateTimeDeserializer,8,0,0,0,2,0,2,0,2,0
+Tweet,tweetoscope,HashtagCounter,113,0,8,0,25,0,10,0,6,0
+Tweet,tweetoscope,OffsetDateTimeSerializer,13,0,0,0,3,0,3,0,3,0
+Tweet,tweetoscope,HashtagExtractor,57,0,6,0,17,0,9,0,6,0

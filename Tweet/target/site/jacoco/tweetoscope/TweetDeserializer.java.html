@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TweetDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Tweet</a> &gt; <a href="index.source.html" class="el_package">tweetoscope</a> &gt; <span class="el_source">TweetDeserializer.java</span></div><h1>TweetDeserializer.java</h1><pre class="source lang-java linenums">package tweetoscope;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonObject;
+import com.twitter.clientlib.model.Tweet;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.json.JSONObject;
+
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+
+
+<span class="nc" id="L15">public class TweetDeserializer implements Deserializer&lt;Tweet&gt; {</span>
+
+    @Override
+    public Tweet deserialize(String s, byte[] data) {
+<span class="nc bnc" id="L19" title="All 2 branches missed.">        if (data == null)</span>
+<span class="nc" id="L20">            return null;</span>
+
+<span class="nc" id="L22">        String jsonString = new String(data);</span>
+        //System.out.println(&quot;Tweet Deserialization :&quot;  + jsonString);
+        //Gson gson = new Gson();
+<span class="nc" id="L25">        GsonBuilder gsonBuilder = new GsonBuilder();</span>
+<span class="nc" id="L26">        gsonBuilder.registerTypeAdapter(LocalDateTime.class, new DateTimeDeserializer());</span>
+<span class="nc" id="L27">        gsonBuilder.registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeDeserializer());</span>
+
+<span class="nc" id="L29">        Gson gson = gsonBuilder.setPrettyPrinting().create();</span>
+
+<span class="nc" id="L31">        return gson.fromJson(jsonString, Tweet.class);</span>
+        //Gson gson = new GsonBuilder()
+        //        .registerTypeAdapter(OffsetDateTime.class, (JsonDeserializer&lt;OffsetDateTime&gt;) (json, type, context) -&gt; OffsetDateTime.parse(json.getAsString()))
+        //        .create();
+        //String jsonString = new String(data);
+        //Tweet tweet;
+        //tweet = gson.fromJson(gson.fromJson(jsonString, JsonObject.class).get(&quot;data&quot;), Tweet.class);
+        //org.json.JSONObject parsedJson = new JSONObject(jsonString);
+        //System.out.println(parsedJson);
+        //OffsetDateTime off  = OffsetDateTime.parse(parsedJson.get(&quot;createdAt&quot;).toString());
+
+        //Tweet parsedTweet = new Tweet();
+        //parsedTweet= new Tweet();
+        //parsedTweet.setId(parsedJson.getString(&quot;id&quot;));
+        //parsedTweet.setCreatedAt(off);
+        //parsedTweet.setText(parsedJson.getString(&quot;text&quot;));
+        //parsedTweet.setAuthorId(parsedJson.getString(&quot;authorId&quot;));
+        //parsedTweet.setConversationId(parsedJson.getString(&quot;conversationId&quot;));
+        //parsedTweet.setLang(parsedJson.getString(&quot;lang&quot;));
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

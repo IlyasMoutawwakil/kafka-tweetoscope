@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stream-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stream
+  template:
+    metadata:
+      name: stream-pod
+      labels:
+        app: stream
+    spec:
+      containers:
+      - name: stream-container
+        image: ilyasodysseus/kafka-stream
+        imagePullPolicy: Always
+        envFrom:
+        - secretRef:
+            name: btoken
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: filter-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: filter
+  template:
+    metadata:
+      name: filter-pod
+      labels:
+        app: filter
+    spec:
+      containers:
+      - name: filter-container
+        image: ilyasodysseus/kafka-filter
+        imagePullPolicy: Always
+        envFrom:
+        - secretRef:
+            name: btoken
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: visualizer-service
+spec:
+  type: NodePort
+  selector:
+    app: visualizer
+  ports:
+  - protocol: TCP
+    targetPort: 5800
+    port: 5800
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: visualizer-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: visualizer
+  template:
+    metadata:
+      name: visualizer-pod
+      labels:
+        app: visualizer
+    spec:
+      containers:
+      - name: visualizer-container
+        image: ilyasodysseus/kafka-visualizer
+        imagePullPolicy: Always
